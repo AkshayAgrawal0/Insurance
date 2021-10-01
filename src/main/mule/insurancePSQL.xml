@@ -1,0 +1,104 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<mule xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xmlns:validation="http://www.mulesoft.org/schema/mule/validation" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:db="http://www.mulesoft.org/schema/mule/db" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:apikit="http://www.mulesoft.org/schema/mule/mule-apikit" xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd http://www.mulesoft.org/schema/mule/mule-apikit http://www.mulesoft.org/schema/mule/mule-apikit/current/mule-apikit.xsd 
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/validation http://www.mulesoft.org/schema/mule/validation/current/mule-validation.xsd
+http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+    <apikit:config name="insurance-config" api="insurance.raml" outboundHeadersMapName="outboundHeaders" httpStatusVarName="httpStatus" />
+    <flow name="insurance-main">
+        <http:listener config-ref="HTTP_Listener_config" path="/api/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:router config-ref="insurance-config" />
+		<error-handler >
+			<on-error-continue enableNotifications="true" logException="true" doc:name="On Error Continue" doc:id="25aebd2f-c567-4cfd-8fcc-b024faf43327" type="VALIDATION:EMPTY_COLLECTION">
+				<ee:transform doc:name="Transform Message" doc:id="9cfd828c-9593-40ad-841b-1dcb24371ae1" >
+					<ee:message >
+						<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	"Message" : "Customer ID : " ++ vars.custid ++ " is incorrect. Please enter a valid Customer ID"
+}]]></ee:set-payload>
+					</ee:message>
+				</ee:transform>
+			</on-error-continue>
+		</error-handler>
+        
+    </flow>
+    <flow name="insurance-console">
+        <http:listener config-ref="HTTP_Listener_config" path="/console/*">
+            <http:response statusCode="#[vars.httpStatus default 200]">
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:response>
+            <http:error-response statusCode="#[vars.httpStatus default 500]">
+                <http:body><![CDATA[#[payload]]]></http:body>
+                <http:headers><![CDATA[#[vars.outboundHeaders default {}]]]></http:headers>
+            </http:error-response>
+        </http:listener>
+        <apikit:console config-ref="insurance-config" />
+        <error-handler>
+            <on-error-propagate type="APIKIT:NOT_FOUND">
+                <ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd">
+                    <ee:message>
+                        <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{message: "Resource not found"}]]></ee:set-payload>
+                    </ee:message>
+                    <ee:variables>
+                        <ee:set-variable variableName="httpStatus">404</ee:set-variable>
+                    </ee:variables>
+                </ee:transform>
+            </on-error-propagate>
+        </error-handler>
+    </flow>
+    <flow name="get:\customer\(customerID):insurance-config">
+        <set-variable value="#[attributes.uriParams.'customerID']" doc:name="custid" doc:id="6c1c4b7a-5876-475d-90d7-e8a0ca8b8aa0" variableName="custid"/>
+		<try doc:name="Try" doc:id="aa376e5c-760b-426d-bb25-824b21d92191" >
+			<db:select doc:name="Select" doc:id="2c5dd738-e192-453c-93a9-00920362fef3" config-ref="Database_Config">
+			<db:sql><![CDATA[SELECT customerid, customername, age, annualincome, contactnumber, smoker, insuranceamount, occupationtype
+	FROM public.customer where customerid = :cid;]]></db:sql>
+			<db:input-parameters><![CDATA[#["cid": attributes.uriParams.'customerID']]]></db:input-parameters>
+		</db:select>
+			<error-handler >
+				<on-error-propagate enableNotifications="true" logException="true" doc:name="On Error Propagate" doc:id="dc8fffbf-dedb-4d2e-86ac-e2938b304b7a" type="DB:CONNECTIVITY">
+					<ee:transform doc:name="Transform Message" doc:id="b0fa655b-ce73-4c3e-8d80-1dd10046e190" >
+						<ee:message >
+							<ee:set-payload ><![CDATA[%dw 2.0
+output application/json
+---
+{
+	ErrorMessage : error.description
+}]]></ee:set-payload>
+						</ee:message>
+					</ee:transform>
+				</on-error-propagate>
+			</error-handler>
+		</try>
+        <validation:is-not-empty-collection doc:id="a8895797-a8ec-4f67-bbda-f85239b53c30" message='#["Customer ID : "++ vars.custid ++" is incorrect. Please enter a valid Customer ID"]'/>
+		<ee:transform xmlns:ee="http://www.mulesoft.org/schema/mule/ee/core" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/ee/core http://www.mulesoft.org/schema/mule/ee/core/current/mule-ee.xsd" doc:id="816e55e6-5e14-4686-82d0-659616e627ce">
+            <ee:message>
+                <ee:set-payload><![CDATA[%dw 2.0
+output application/json
+---
+{
+	CustomerID: payload[0].customerid,
+	CustomerName: payload[0].customername,
+	Age: payload[0].age,
+	AnnualIncome:  payload[0].annualincome,
+	ContactNumber: payload[0].contactnumber,
+	Smoker: payload[0].smoker,
+	OccupationType:  payload[0].occupationtype,
+	InsuranceAmount:  payload[0].insuranceamount
+}
+]]></ee:set-payload>
+            </ee:message>
+        </ee:transform>
+    </flow>
+</mule>

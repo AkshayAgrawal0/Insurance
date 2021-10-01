@@ -1,0 +1,9 @@
+http:
+  host: "localhost"
+  port: "8081"
+
+psql:
+  url: "jdbc:postgresql://fanny.db.elephantsql.com:5432/htfrkfih"
+  driver: "org.postgresql.Driver"
+  user: "htfrkfih"
+  pass: "kl9eU1PdgB4FhoLPYn-C0CE2SpPt_2l3"

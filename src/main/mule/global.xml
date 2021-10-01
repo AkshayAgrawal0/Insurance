@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<mule xmlns:secure-properties="http://www.mulesoft.org/schema/mule/secure-properties" xmlns:db="http://www.mulesoft.org/schema/mule/db"
+	xmlns:salesforce="http://www.mulesoft.org/schema/mule/salesforce"
+	xmlns:http="http://www.mulesoft.org/schema/mule/http" xmlns="http://www.mulesoft.org/schema/mule/core" xmlns:doc="http://www.mulesoft.org/schema/mule/documentation" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.mulesoft.org/schema/mule/core http://www.mulesoft.org/schema/mule/core/current/mule.xsd
+http://www.mulesoft.org/schema/mule/http http://www.mulesoft.org/schema/mule/http/current/mule-http.xsd
+http://www.mulesoft.org/schema/mule/salesforce http://www.mulesoft.org/schema/mule/salesforce/current/mule-salesforce.xsd
+http://www.mulesoft.org/schema/mule/db http://www.mulesoft.org/schema/mule/db/current/mule-db.xsd
+http://www.mulesoft.org/schema/mule/secure-properties http://www.mulesoft.org/schema/mule/secure-properties/current/mule-secure-properties.xsd">
+	<http:listener-config name="HTTP_Listener_config" doc:name="HTTP Listener config" doc:id="2d49eadf-9f7a-4afc-9154-fc84c94c0a9f" >
+		<http:listener-connection host="0.0.0.0" port="${http.port}" />
+	</http:listener-config>
+	<configuration-properties doc:name="Configuration properties" doc:id="327228b2-b491-41d0-b0ab-f07ec386f3f8" file="config.yaml" />
+	<db:config name="Database_Config" doc:name="Database Config" doc:id="0794c9ce-1192-49fb-bc11-db66f56ce27c" >
+		<db:generic-connection url="${psql.url}" driverClassName="${psql.driver}" user="${psql.user}" password="${psql.pass}" />
+	</db:config>
+	<configuration doc:name="Configuration" doc:id="24ad1fa1-f8e3-4cc9-9e96-b072346938ac" defaultErrorHandler-ref="globalErrorHandler" />
+	<configuration-properties doc:name="Configuration properties" doc:id="02c4b484-d804-4ee8-a866-ebe2c64d644d" file="config.yaml"/>
+</mule>

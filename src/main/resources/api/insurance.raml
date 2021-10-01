@@ -1,0 +1,28 @@
+#%RAML 1.0
+title: Insurance System SFDC API
+
+mediaType: 
+- application/json
+- application/xml
+
+protocols:
+  - HTTP
+  - HTTPS
+
+version: v1
+
+types:
+  responseType: !include DataType/exampleResponseSystemDataType.raml
+
+/customer:
+  /{customerID}:
+    get:
+      responses:
+        200:
+          body:
+            application/json:
+              type: responseType
+              examples: !include Examples/exampleResponseSystemAPI.raml
+              
+              
+    
